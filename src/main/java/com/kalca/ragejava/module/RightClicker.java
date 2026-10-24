@@ -12,7 +12,7 @@ import org.lwjgl.input.Mouse;
 public class RightClicker extends Module {
 
     private final SliderSetting delaySetting = new SliderSetting("Delay", 100, 0, 1000, 10);
-    private final SliderSetting cpsSetting = new SliderSetting("CPS", 12, 1, 24, 1);
+    private final SliderSetting cpsSetting = new SliderSetting("CPS", 12, 1, 20, 1);
     private final SliderSetting randomSetting = new SliderSetting("Randomization", 0, 0, 100, 5);
 
     private final Minecraft mc = Minecraft.getMinecraft();
@@ -64,7 +64,8 @@ public class RightClicker extends Module {
         double base = 1000.0 / cpsSetting.getValue();
         double jitter = (Math.random() * 2.0 - 1.0) * (randomSetting.getValue() / 100.0);
         double interval = base * (1.0 + jitter);
-        double min = Math.max(25.0, base * 0.5);
+        // Never let negative randomization push the interval below the 20 CPS ceiling.
+        double min = Math.max(50.0, base * 0.5);
         double max = Math.min(2000.0, base * 2.5);
         return Math.min(Math.max(interval, min), max);
     }

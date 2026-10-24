@@ -29,7 +29,7 @@ public class LeftClicker extends Module {
         }
     };
     private final SliderSetting delaySetting = new SliderSetting("Delay", 100, 0, 1000, 10);
-    private final SliderSetting cpsSetting = new SliderSetting("CPS", 12, 1, 24, 1);
+    private final SliderSetting cpsSetting = new SliderSetting("CPS", 12, 1, 20, 1);
     private final SliderSetting jitterSetting = new SliderSetting("Jitter", 0, 0, 100, 5);
     private final BooleanSetting blockHitSetting = new BooleanSetting("BlockHit", false);
 
