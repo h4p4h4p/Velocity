@@ -100,7 +100,16 @@ public class RageJava {
         if (event.type != RenderGameOverlayEvent.ElementType.TEXT) return;
 
         Module iface = moduleManager.getModule("Interface");
-        if (iface == null || !iface.isEnabled() || !((Interface) iface).shouldShowModuleList()) return;
+        if (iface == null || !iface.isEnabled()) return;
+        Interface hud = (Interface) iface;
+
+        if (hud.shouldShowWatermark()) {
+            String playerName = mc.thePlayer != null ? mc.thePlayer.getName() : mc.getSession().getUsername();
+            String watermark = "[" + NAME + " v" + VERSION + " - " + playerName + "]";
+            RenderUtil.drawString(watermark, 2, 2, 0xFFFFFFFF);
+        }
+
+        if (!hud.shouldShowModuleList()) return;
 
         ScaledResolution sr = new ScaledResolution(mc);
         int width = sr.getScaledWidth();
