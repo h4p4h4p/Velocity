@@ -2,7 +2,6 @@ package com.kalca.ragejava.module;
 
 import com.kalca.ragejava.settings.BooleanSetting;
 import com.kalca.ragejava.settings.ModeSetting;
-import com.kalca.ragejava.settings.Setting;
 import com.kalca.ragejava.settings.SliderSetting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
@@ -16,42 +15,38 @@ public class LeftClicker extends Module {
 
     public static final String MODE_NORMAL = "Normal";
     public static final String MODE_TRIGGER = "Trigger";
-    public static final String MODE_NCP = "NCP";
 
-    private final ModeSetting modeSetting = new ModeSetting("Mode", new String[]{MODE_NORMAL, MODE_TRIGGER, MODE_NCP}, 0);
+    // Old configs selected NCP as mode index 2. Without this it would clamp to Trigger.
+    private final ModeSetting modeSetting = new ModeSetting("Mode",
+            new String[]{MODE_NORMAL, MODE_TRIGGER}, 0) {
+        @Override
+        public void fromConfigString(String s) {
+            if ("2".equals(s.trim())) {
+                setIndex(0);
+                return;
+            }
+            super.fromConfigString(s);
+        }
+    };
     private final SliderSetting delaySetting = new SliderSetting("Delay", 100, 0, 1000, 10);
     private final SliderSetting cpsSetting = new SliderSetting("CPS", 12, 1, 24, 1);
-    private final SliderSetting ncpCpsSetting = new SliderSetting("NCP CPS", 12, 1, 18, 1);
     private final SliderSetting jitterSetting = new SliderSetting("Jitter", 0, 0, 100, 5);
-    private final SliderSetting dropChanceSetting = new SliderSetting("Drop Chance", 0, 0, 95, 5);
     private final BooleanSetting blockHitSetting = new BooleanSetting("BlockHit", false);
 
     private final Minecraft mc = Minecraft.getMinecraft();
     private boolean wasDown;
     private long pressTime;
     private int lastAttackTick = -1;
+    private double clickBudget = 1.0;
 
     public LeftClicker() {
         super("LeftClicker", Category.COMBAT);
         settings.add(modeSetting);
         settings.add(delaySetting);
         settings.add(cpsSetting);
-        settings.add(ncpCpsSetting);
         settings.add(jitterSetting);
-        settings.add(dropChanceSetting);
         settings.add(blockHitSetting);
         MinecraftForge.EVENT_BUS.register(this);
-    }
-
-    @Override
-    public boolean isSettingVisible(Setting setting) {
-        String mode = modeSetting.getValue();
-        boolean ncp = MODE_NCP.equals(mode);
-        boolean blockHit = blockHitSetting.getValue();
-        if (setting == cpsSetting) return !ncp && !blockHit;
-        if (setting == ncpCpsSetting) return ncp;
-        if (setting == dropChanceSetting) return ncp;
-        return true;
     }
 
     @SubscribeEvent
@@ -63,8 +58,6 @@ public class LeftClicker extends Module {
             return;
         }
 
-        String mode = modeSetting.getValue();
-        boolean ncp = MODE_NCP.equals(mode);
         boolean blockHit = blockHitSetting.getValue();
         boolean down = Mouse.isButtonDown(0);
         boolean rightDown = Mouse.isButtonDown(1);
@@ -73,6 +66,7 @@ public class LeftClicker extends Module {
         if (down && !wasDown) {
             pressTime = now;
             lastAttackTick = -1;
+            clickBudget = 1.0;
         }
         wasDown = down;
 
@@ -91,20 +85,10 @@ public class LeftClicker extends Module {
                 return;
             }
 
-            long delay = (long) delaySetting.getValue();
-            if (now - pressTime < delay) return;
-
+            if (now - pressTime < (long) delaySetting.getValue()) return;
             if (mc.thePlayer.ticksExisted == lastAttackTick) return;
 
-            // Use the mode's CPS setting (NCP CPS for NCP mode, regular CPS otherwise)
-            double cps = ncp ? ncpCpsSetting.getValue() : cpsSetting.getValue();
-            if (cps <= 0) return;
-            double chance = Math.min(1.0, (cps / 20.0) * jitterFactor());
-
-            // Built-in tick spreader for NCP mode
-            if (ncp && mc.thePlayer.ticksExisted % 2 != 0) return;
-
-            if (Math.random() < chance) {
+            if (clickDue()) {
                 blockHitClick();
                 lastAttackTick = mc.thePlayer.ticksExisted;
             }
@@ -116,26 +100,29 @@ public class LeftClicker extends Module {
             return;
         }
 
-        long delay = (long) delaySetting.getValue();
-        if (now - pressTime < delay) return;
-
+        if (now - pressTime < (long) delaySetting.getValue()) return;
         if (mc.thePlayer.ticksExisted == lastAttackTick) return;
 
-        double cps = ncp ? ncpCpsSetting.getValue() : cpsSetting.getValue();
-        if (cps <= 0) return;
-        double chance = Math.min(1.0, (cps / 20.0) * jitterFactor());
-
-        // Built-in tick spreader for NCP mode - only attack on even ticks
-        if (ncp && mc.thePlayer.ticksExisted % 2 != 0) return;
-
-        if (Math.random() < chance) {
-            if (ncp && dropChanceSetting.getValue() > 0 && Math.random() * 100 < dropChanceSetting.getValue()) {
-                lastAttackTick = mc.thePlayer.ticksExisted;
-            } else {
-                click();
-                lastAttackTick = mc.thePlayer.ticksExisted;
-            }
+        if (clickDue()) {
+            click();
+            lastAttackTick = mc.thePlayer.ticksExisted;
         }
+    }
+
+    /**
+     * Built-in tick spreader. A fraction of a click is banked every tick from the CPS setting, so
+     * attacks are paced across ticks instead of being rolled as a burst-prone chance. At most one
+     * attack can be released per tick, and leftover credit is capped so lag cannot cause a burst.
+     */
+    private boolean clickDue() {
+        double cps = cpsSetting.getValue();
+        if (cps <= 0.0) return false;
+
+        clickBudget += (cps / 20.0) * jitterFactor();
+        if (clickBudget < 1.0) return false;
+
+        clickBudget = Math.min(1.0, clickBudget - 1.0);
+        return true;
     }
 
     private void blockHitClick() {
@@ -195,6 +182,7 @@ public class LeftClicker extends Module {
         wasDown = false;
         pressTime = 0;
         lastAttackTick = -1;
+        clickBudget = 1.0;
     }
 
     @Override
