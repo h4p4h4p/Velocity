@@ -3,6 +3,7 @@ package com.kalca.ragejava;
 import com.kalca.ragejava.command.CommandManager;
 import com.kalca.ragejava.config.ConfigManager;
 import com.kalca.ragejava.gui.ClickGUI;
+import com.kalca.ragejava.gui.Theme;
 import com.kalca.ragejava.module.Interface;
 import com.kalca.ragejava.module.Module;
 import com.kalca.ragejava.module.ModuleManager;
@@ -105,8 +106,14 @@ public class RageJava {
 
         if (hud.shouldShowWatermark()) {
             String playerName = mc.thePlayer != null ? mc.thePlayer.getName() : mc.getSession().getUsername();
-            String watermark = "[" + NAME + " v" + VERSION + " - " + playerName + "]";
-            RenderUtil.drawString(watermark, 2, 2, 0xFFFFFFFF);
+            String prefix = "[";
+            String suffix = " v" + VERSION + " - " + playerName + "]";
+            int x = 2;
+            RenderUtil.drawString(prefix, x, 2, 0xFFFFFFFF);
+            x += RenderUtil.getTextWidth(prefix);
+            RenderUtil.drawString(NAME, x, 2, Theme.ACCENT);
+            x += RenderUtil.getTextWidth(NAME);
+            RenderUtil.drawString(suffix, x, 2, 0xFFFFFFFF);
         }
 
         if (!hud.shouldShowModuleList()) return;
