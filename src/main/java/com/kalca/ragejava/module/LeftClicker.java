@@ -5,6 +5,10 @@ import com.kalca.ragejava.settings.ModeSetting;
 import com.kalca.ragejava.settings.SliderSetting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemAxe;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.ItemSword;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -15,19 +19,10 @@ public class LeftClicker extends Module {
 
     public static final String MODE_NORMAL = "Normal";
     public static final String MODE_TRIGGER = "Trigger";
+    public static final String MODE_WEAPON_ONLY = "Weapon Only";
 
-    // Old configs selected NCP as mode index 2. Without this it would clamp to Trigger.
     private final ModeSetting modeSetting = new ModeSetting("Mode",
-            new String[]{MODE_NORMAL, MODE_TRIGGER}, 0) {
-        @Override
-        public void fromConfigString(String s) {
-            if ("2".equals(s.trim())) {
-                setIndex(0);
-                return;
-            }
-            super.fromConfigString(s);
-        }
-    };
+            new String[]{MODE_NORMAL, MODE_TRIGGER, MODE_WEAPON_ONLY}, 0);
     private final SliderSetting delaySetting = new SliderSetting("Delay", 100, 0, 1000, 10);
     private final SliderSetting cpsSetting = new SliderSetting("CPS", 12, 1, 20, 1);
     private final SliderSetting jitterSetting = new SliderSetting("Jitter", 0, 0, 100, 5);
@@ -54,6 +49,11 @@ public class LeftClicker extends Module {
         if (event.phase != TickEvent.Phase.START) return;
         if (!isEnabled()) return;
         if (mc.thePlayer == null || mc.theWorld == null || mc.currentScreen != null) {
+            reset();
+            return;
+        }
+
+        if (weaponOnly() && !holdingWeapon()) {
             reset();
             return;
         }
@@ -149,6 +149,17 @@ public class LeftClicker extends Module {
 
     private boolean triggerMode() {
         return MODE_TRIGGER.equals(modeSetting.getValue());
+    }
+
+    private boolean weaponOnly() {
+        return MODE_WEAPON_ONLY.equals(modeSetting.getValue());
+    }
+
+    private boolean holdingWeapon() {
+        ItemStack held = mc.thePlayer.getHeldItem();
+        if (held == null) return false;
+        Item item = held.getItem();
+        return item instanceof ItemSword || item instanceof ItemAxe;
     }
 
     private void click() {
