@@ -1,7 +1,6 @@
 package com.kalca.ragejava.module;
 
 import com.kalca.ragejava.settings.BooleanSetting;
-import com.kalca.ragejava.settings.ModeSetting;
 import com.kalca.ragejava.settings.Setting;
 import com.kalca.ragejava.settings.SliderSetting;
 import com.kalca.ragejava.util.RotationUtil;
@@ -12,7 +11,6 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.play.client.C07PacketPlayerDigging;
 import net.minecraft.network.play.client.C08PacketPlayerBlockPlacement;
 import net.minecraft.network.play.client.C09PacketHeldItemChange;
 import net.minecraft.util.BlockPos;
@@ -26,15 +24,10 @@ import net.minecraftforge.fml.common.gameevent.TickEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BedNuker extends Module {
+public class Breaker extends Module {
 
-    public static final String MODE_SWING = "Swing";
-    public static final String MODE_SILENT = "Silent";
-
-    private final ModeSetting modeSetting = new ModeSetting("Mode", new String[]{MODE_SWING, MODE_SILENT}, 0);
     private final SliderSetting rangeSetting = new SliderSetting("Range", 6.0, 1.0, 12.0, 0.5);
     private final SliderSetting delaySetting = new SliderSetting("Delay (ms)", 0, 0, 500, 10);
-    private final SliderSetting speedSetting = new SliderSetting("Speed", 10, 1, 20, 1);
     private final BooleanSetting rotateSetting = new BooleanSetting("Rotate", true);
     private final BooleanSetting swingSetting = new BooleanSetting("Swing Hand", true);
     private final BooleanSetting autoSwitchSetting = new BooleanSetting("Auto Switch Tool", true);
@@ -48,12 +41,10 @@ public class BedNuker extends Module {
     private BlockPos currentTarget = null;
     private EnumFacing targetFace = null;
 
-    public BedNuker() {
-        super("BedNuker", Category.COMBAT);
-        settings.add(modeSetting);
+    public Breaker() {
+        super("Breaker", Category.COMBAT);
         settings.add(rangeSetting);
         settings.add(delaySetting);
-        settings.add(speedSetting);
         settings.add(rotateSetting);
         settings.add(swingSetting);
         settings.add(autoSwitchSetting);
@@ -67,18 +58,9 @@ public class BedNuker extends Module {
     @Override
     public boolean isSettingVisible(Setting setting) {
         if (setting == delaySetting) return true;
-        if (setting == speedSetting) return true;
         if (setting == autoSwitchSetting) return true;
         if (setting == onlySwordSetting) return true;
         return super.isSettingVisible(setting);
-    }
-
-    private String mode() {
-        return modeSetting.getValue();
-    }
-
-    private boolean silent() {
-        return MODE_SILENT.equals(mode());
     }
 
     @SubscribeEvent
@@ -178,25 +160,9 @@ public class BedNuker extends Module {
             float[] rotations = RotationUtil.getRotations(hitVec);
             mc.thePlayer.rotationYaw = rotations[0];
             mc.thePlayer.rotationPitch = rotations[1];
-            if (silent()) {
-                mc.thePlayer.setRotationYawHead(rotations[0]);
-                mc.getNetHandler().addToSendQueue(new C07PacketPlayerDigging(
-                        C07PacketPlayerDigging.Action.START_DESTROY_BLOCK, pos, face));
-            }
         }
 
-        if (!silent()) {
-            mc.playerController.onPlayerDamageBlock(pos, face);
-        } else {
-            mc.getNetHandler().addToSendQueue(new C07PacketPlayerDigging(
-                    C07PacketPlayerDigging.Action.START_DESTROY_BLOCK, pos, face));
-            for (int i = 0; i < speedSetting.getValue(); i++) {
-                mc.getNetHandler().addToSendQueue(new C07PacketPlayerDigging(
-                        C07PacketPlayerDigging.Action.STOP_DESTROY_BLOCK, pos, face));
-                mc.getNetHandler().addToSendQueue(new C07PacketPlayerDigging(
-                        C07PacketPlayerDigging.Action.START_DESTROY_BLOCK, pos, face));
-            }
-        }
+        mc.playerController.onPlayerDamageBlock(pos, face);
 
         if (swingSetting.getValue()) {
             mc.thePlayer.swingItem();

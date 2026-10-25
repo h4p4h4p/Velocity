@@ -98,6 +98,18 @@ public class ConfigManager {
             }
         }
 
+        // BedNuker was renamed to Breaker; carry over its enable state, bind and settings.
+        // Its Mode and Speed settings are gone with the Silent mode, so they are not copied.
+        if (!values.containsKey("Breaker.enabled") && values.containsKey("BedNuker.enabled")) {
+            for (Map.Entry<String, String> entry : new ArrayList<>(values.entrySet())) {
+                String key = entry.getKey();
+                if (!key.startsWith("BedNuker.")) continue;
+                String name = key.substring("BedNuker.".length());
+                if (name.equals("Mode") || name.equals("Speed")) continue;
+                values.put("Breaker." + name, entry.getValue());
+            }
+        }
+
         // Velocity's knockback multipliers used to be stored as 0..100 percentages.
         migrateVelocityScale(values, "Velocity.Horizontal");
         migrateVelocityScale(values, "Velocity.Vertical");

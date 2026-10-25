@@ -17,7 +17,7 @@ public class ModuleManager {
         modules.add(new Backtrack());
         modules.add(new RightClicker());
         modules.add(new Velocity());
-        modules.add(new BedNuker());
+        modules.add(new Breaker());
         modules.add(new Esp());
         modules.add(new Fullbright());
         modules.add(new NoHurtCam());
