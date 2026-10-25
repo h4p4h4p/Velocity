@@ -160,14 +160,9 @@ public class ModuleButton {
         int textColor = module.isEnabled() ? Theme.TEXT : Theme.TEXT_GRAY;
         RenderUtil.drawString(module.getName(), x + 7, y + (ROW_HEIGHT - RenderUtil.getTextHeight()) / 2f, textColor);
 
-        String tag = module.getTag();
-        if (tag != null && !tag.isEmpty()) {
-            int tagColor = module.isEnabled() ? Theme.ACCENT : Theme.TEXT_GRAY;
-            float tagX = x + width - EXPAND_ZONE - RenderUtil.getTextWidth(tag) - 4;
-            RenderUtil.drawString(tag, tagX, y + (ROW_HEIGHT - RenderUtil.getTextHeight()) / 2f, tagColor);
-        }
-
-        
+        String indicator = "+";
+        RenderUtil.drawString(indicator, x + width - 4 - RenderUtil.getTextWidth(indicator),
+                y + (ROW_HEIGHT - RenderUtil.getTextHeight()) / 2f, hovered ? Theme.TEXT : Theme.TEXT_GRAY);
 
         if (expanded) {
             float wh = Math.max(widgetsHeight(), getPreviewMinHeight());

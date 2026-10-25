@@ -98,8 +98,6 @@ public class Panel {
             float bw = RenderUtil.getTextWidth(button.getModule().getName());
             float bindW = button.getBindWidget() == null ? 0 : RenderUtil.getTextWidth(button.getBindWidget().keyName());
             bw += bindW + 36;
-            String tag = button.getModule().getTag();
-            if (tag != null) bw += RenderUtil.getTextWidth(tag) + 8;
             for (Widget widget : button.getWidgets()) {
                 bw = Math.max(bw, widget.getPreferredWidth() + 8);
             }
