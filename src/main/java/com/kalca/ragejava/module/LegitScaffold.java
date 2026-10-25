@@ -18,7 +18,7 @@ import org.lwjgl.input.Keyboard;
  */
 public class LegitScaffold extends Module {
 
-    private final SliderSetting distanceSetting = new SliderSetting("Distance", 0.3, 0.1, 0.6, 0.05);
+    private final SliderSetting distanceSetting = new SliderSetting("Distance", 0.3, 0.01, 0.30, 0.01);
     private final BooleanSetting whileSneakingSetting = new BooleanSetting("While Sneaking", false);
 
     private final Minecraft mc = Minecraft.getMinecraft();
