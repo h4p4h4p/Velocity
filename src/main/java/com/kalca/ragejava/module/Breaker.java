@@ -245,6 +245,7 @@ public class Breaker extends Module {
 
     @Override
     public String getTag() {
-        return currentTarget != null ? currentTarget.toString() : null;
+        if (currentTarget == null) return null;
+        return currentTarget.getX() + ", " + currentTarget.getY() + ", " + currentTarget.getZ();
     }
 }

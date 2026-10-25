@@ -53,6 +53,18 @@ public class Velocity extends Module {
     }
 
     @Override
+    public String getTag() {
+        if (modify()) {
+            return Math.round(horizontalSetting.getValue() * 100) + "% "
+                    + Math.round(verticalSetting.getValue() * 100) + "%";
+        }
+        if (lag()) {
+            return Math.round(lagChanceSetting.getValue()) + "%";
+        }
+        return null;
+    }
+
+    @Override
     public boolean isSettingVisible(Setting setting) {
         if (setting == horizontalSetting) return modify();
         if (setting == verticalSetting) return modify();

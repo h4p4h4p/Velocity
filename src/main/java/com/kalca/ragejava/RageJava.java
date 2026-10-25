@@ -123,8 +123,15 @@ public class RageJava {
 
         int y = 2;
         for (Module module : moduleManager.getEnabledModules()) {
-            int textWidth = RenderUtil.getTextWidth(module.getName());
-            RenderUtil.drawString(module.getName(), width - textWidth - 2, y, 0xFFFFFFFF);
+            String tag = module.getTag();
+            boolean hasTag = tag != null && !tag.isEmpty();
+            String suffix = hasTag ? " " + tag : "";
+            int nameWidth = RenderUtil.getTextWidth(module.getName());
+            float x = width - 2 - nameWidth - RenderUtil.getTextWidth(suffix);
+            RenderUtil.drawString(module.getName(), x, y, 0xFFFFFFFF);
+            if (hasTag) {
+                RenderUtil.drawString(suffix, x + nameWidth, y, Theme.ACCENT);
+            }
             y += RenderUtil.getTextHeight() + 1;
         }
     }
