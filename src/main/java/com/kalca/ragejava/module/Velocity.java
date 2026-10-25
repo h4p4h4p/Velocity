@@ -7,6 +7,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.S12PacketEntityVelocity;
@@ -20,10 +21,12 @@ public class Velocity extends Module {
 
     public static final String MODE_MODIFY = "Modify";
     public static final String MODE_LAG = "Lag";
+    public static final String MODE_REVERSAL = "Reversal";
 
     private static final String HANDLER_NAME = "ragejava_velocity";
+    private static final int REVERSAL_MAX_WAIT_TICKS = 4;
 
-    private final ModeSetting modeSetting = new ModeSetting("Mode", new String[]{MODE_MODIFY, MODE_LAG}, 0);
+    private final ModeSetting modeSetting = new ModeSetting("Mode", new String[]{MODE_MODIFY, MODE_LAG, MODE_REVERSAL}, 0);
     private final SliderSetting horizontalSetting = new SliderSetting("Horizontal", 0, -1.0, 1.0, 0.1);
     private final SliderSetting verticalSetting = new SliderSetting("Vertical", 0, -1.0, 1.0, 0.1);
     private final SliderSetting lagChanceSetting = new SliderSetting("Lag Chance", 0, 0, 100, 5);
@@ -32,6 +35,13 @@ public class Velocity extends Module {
     private VelocityHandler handler;
     private Channel boundChannel;
     private int playerId = -1;
+
+    private volatile int clientTick;
+    private volatile boolean reversalPending;
+    private volatile int reversalApplyTick;
+    private volatile double reversalX;
+    private volatile double reversalY;
+    private volatile double reversalZ;
 
     public Velocity() {
         super("Velocity", Category.COMBAT);
@@ -62,12 +72,67 @@ public class Velocity extends Module {
         return MODE_LAG.equals(mode());
     }
 
+    private boolean reversal() {
+        return MODE_REVERSAL.equals(mode());
+    }
+
     @SubscribeEvent
     public void onTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.START) return;
-        if (!isEnabled()) return;
-        if (mc.thePlayer != null) playerId = mc.thePlayer.getEntityId();
-        armChannel();
+        if (event.phase == TickEvent.Phase.START) {
+            ++clientTick;
+            if (!isEnabled()) return;
+            if (!reversal()) clearReversal();
+            if (mc.thePlayer != null) playerId = mc.thePlayer.getEntityId();
+            armChannel();
+            return;
+        }
+        if (isEnabled() && reversal()) handleReversal();
+    }
+
+    /**
+     * Records where the player was when the knockback arrived, then lets the packet through.
+     * The next tick is spent measuring where the knockback actually moved them.
+     */
+    private void captureReversal() {
+        EntityPlayerSP player = mc.thePlayer;
+        if (player == null) return;
+        reversalX = player.posX;
+        reversalY = player.posY;
+        reversalZ = player.posZ;
+        reversalApplyTick = clientTick + 1;
+        reversalPending = true;
+    }
+
+    /**
+     * Sends the player back with the velocity that covers the distance to the pre-knockback
+     * position. Running at the end of the tick means the correction moves them on the next one.
+     */
+    private void handleReversal() {
+        if (!reversalPending || clientTick < reversalApplyTick) return;
+
+        EntityPlayerSP player = mc.thePlayer;
+        if (player == null) {
+            clearReversal();
+            return;
+        }
+
+        double dx = reversalX - player.posX;
+        double dy = reversalY - player.posY;
+        double dz = reversalZ - player.posZ;
+
+        if (dx * dx + dy * dy + dz * dz < 1.0E-4D) {
+            if (clientTick - reversalApplyTick >= REVERSAL_MAX_WAIT_TICKS) clearReversal();
+            return;
+        }
+
+        player.motionX = dx;
+        player.motionY = dy;
+        player.motionZ = dz;
+        clearReversal();
+    }
+
+    private void clearReversal() {
+        reversalPending = false;
     }
 
     private void armChannel() {
@@ -108,12 +173,14 @@ public class Velocity extends Module {
 
     @Override
     public void onEnable() {
+        clearReversal();
         if (mc.thePlayer != null) playerId = mc.thePlayer.getEntityId();
         armChannel();
     }
 
     @Override
     public void onDisable() {
+        clearReversal();
         VelocityHandler h = handler;
         handler = null;
         Channel channel = boundChannel;
@@ -148,6 +215,7 @@ public class Velocity extends Module {
                                     p.getMotionY() / 8000.0 * v,
                                     p.getMotionZ() / 8000.0 * h);
                         }
+                        if (reversal()) captureReversal();
                     }
                 } else if (msg instanceof S27PacketExplosion) {
                     S27PacketExplosion p = (S27PacketExplosion) msg;
@@ -161,6 +229,7 @@ public class Velocity extends Module {
                                 p.getAffectedBlockPositions(),
                                 new Vec3(p.func_149149_c() * h, p.func_149144_d() * v, p.func_149147_e() * h));
                     }
+                    if (reversal()) captureReversal();
                 }
             }
             ctx.fireChannelRead(msg);

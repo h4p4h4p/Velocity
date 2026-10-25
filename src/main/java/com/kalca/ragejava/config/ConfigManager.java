@@ -18,6 +18,9 @@ import java.util.Map;
 
 public class ConfigManager {
 
+    private static final String CONFIG_VERSION_KEY = "ragejava.configVersion";
+    private static final String CONFIG_VERSION = "1";
+
     private final File file;
 
     public ConfigManager() {
@@ -26,6 +29,7 @@ public class ConfigManager {
 
     public void save(ModuleManager modules) {
         List<String> lines = new ArrayList<>();
+        lines.add(CONFIG_VERSION_KEY + "=" + CONFIG_VERSION);
         lines.add("ragejava.accent=" + String.format("%06X", Theme.ACCENT & 0xFFFFFF));
         lines.add("ragejava.rainbow=" + CommandManager.rainbow);
         for (Module module : modules.getModules()) {
@@ -70,6 +74,10 @@ public class ConfigManager {
             return;
         }
 
+        // Old configs predate the version key and the Reversal mode, so mode 2 is the removed
+        // Simulations entry. With the key present, mode 2 is Reversal and must be kept.
+        boolean legacyConfig = !values.containsKey(CONFIG_VERSION_KEY);
+
         String accent = values.get("ragejava.accent");
         if (accent != null) {
             try {
@@ -94,7 +102,7 @@ public class ConfigManager {
         migrateVelocityScale(values, "Velocity.Horizontal");
         migrateVelocityScale(values, "Velocity.Vertical");
         // Simulations was removed from Velocity; use Modify rather than clamping to Lag.
-        if ("2".equals(values.get("Velocity.Mode"))) {
+        if (legacyConfig && "2".equals(values.get("Velocity.Mode"))) {
             values.put("Velocity.Mode", "0");
         }
 
