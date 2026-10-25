@@ -120,4 +120,9 @@ public class LegitScaffold extends Module {
             KeyBinding.setKeyBindState(mc.gameSettings.keyBindSneak.getKeyCode(), false);
         }
     }
+
+    @Override
+    public String getTag() {
+        return String.format("%.2f", distanceSetting.getValue());
+    }
 }

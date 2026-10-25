@@ -337,4 +337,10 @@ private class DisadvantageHandler extends ChannelDuplexHandler {
             super.write(ctx, msg, promise);
         }
     }
+
+    @Override
+    public String getTag() {
+        double value = multiplierSetting.getValue();
+        return (Math.round(value * 100.0) / 100.0) + "x";
+    }
 }

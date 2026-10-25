@@ -42,6 +42,12 @@ public class Speed extends Module {
     }
 
     @Override
+    public String getTag() {
+        double value = speedSetting.getValue();
+        return (Math.round(value * 100.0) / 100.0) + "x";
+    }
+
+    @Override
     public void onEnable() {
     }
 

@@ -318,4 +318,9 @@ public class Internet extends Module {
             }
         }
     }
+
+    @Override
+    public String getTag() {
+        return modeSetting.getValue();
+    }
 }

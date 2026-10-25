@@ -109,4 +109,9 @@ public class Fullbright extends Module {
         }
         lightApplied = false;
     }
+
+    @Override
+    public String getTag() {
+        return modeSetting.getValue();
+    }
 }

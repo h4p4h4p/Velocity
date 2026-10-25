@@ -332,4 +332,9 @@ public class AimAssist extends Module {
             // In that case, we send a C03PacketPlayer look packet right before the attack
         }
     }
+
+    @Override
+    public String getTag() {
+        return modeSetting.getValue();
+    }
 }

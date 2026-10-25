@@ -71,6 +71,11 @@ public class Jetpack extends Module {
     }
 
     @Override
+    public String getTag() {
+        return modeSetting.getValue();
+    }
+
+    @Override
     public void onEnable() {
     }
 

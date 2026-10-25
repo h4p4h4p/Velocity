@@ -223,7 +223,12 @@ public class Backtrack extends Module {
             this.tick = tick;
             this.x = x; this.y = y; this.z = z;
             this.prevX = prevX; this.prevY = prevY; this.prevZ = prevZ;
-            this.lastX = lastX; this.lastY = lastY; this.lastZ = lastZ;
+            this.lastX = lastX; this.lastY = lastY;            this.lastZ = lastZ;
         }
+    }
+
+    @Override
+    public String getTag() {
+        return Math.round(ticksSetting.getValue()) + "t";
     }
 }

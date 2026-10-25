@@ -146,4 +146,9 @@ public class NameHider extends Module {
             }
         }
     }
+
+    @Override
+    public String getTag() {
+        return modeSetting.getValue();
+    }
 }

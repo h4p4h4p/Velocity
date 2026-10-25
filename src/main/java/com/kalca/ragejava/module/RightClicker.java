@@ -89,6 +89,11 @@ public class RightClicker extends Module {
     }
 
     @Override
+    public String getTag() {
+        return Math.round(cpsSetting.getValue()) + " CPS";
+    }
+
+    @Override
     public void onEnable() {
         reset();
     }

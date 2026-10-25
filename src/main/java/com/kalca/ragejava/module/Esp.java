@@ -381,4 +381,9 @@ public class Esp extends Module {
         quadCount = 0;
         nameCount = 0;
     }
+
+    @Override
+    public String getTag() {
+        return modeSetting.getValue();
+    }
 }
