@@ -19,7 +19,7 @@ import java.util.Map;
 public class ConfigManager {
 
     private static final String CONFIG_VERSION_KEY = "ragejava.configVersion";
-    private static final String CONFIG_VERSION = "1";
+    private static final String CONFIG_VERSION = "2";
 
     private final File file;
 
@@ -77,8 +77,22 @@ public class ConfigManager {
         // Old configs predate the version key and the Reversal mode, so mode 2 is the removed
         // Simulations entry. With the key present, mode 2 is Reversal and must be kept.
         boolean legacyConfig = !values.containsKey(CONFIG_VERSION_KEY);
+        int configVersion = 0;
+        String version = values.get(CONFIG_VERSION_KEY);
+        if (version != null) {
+            try {
+                configVersion = Integer.parseInt(version);
+            } catch (NumberFormatException ignored) {
+            }
+        }
 
         String accent = values.get("ragejava.accent");
+        // The default accent moved from the old blue to red; only carry configs that never
+        // changed it. Saving with the new version stops a deliberate 1B395C from being reset.
+        if (accent != null && configVersion < 2 && accent.equalsIgnoreCase("1B395C")) {
+            accent = "FF5555";
+            values.put("ragejava.accent", accent);
+        }
         if (accent != null) {
             try {
                 Theme.ACCENT = 0xFF000000 | (Integer.parseInt(accent, 16) & 0xFFFFFF);

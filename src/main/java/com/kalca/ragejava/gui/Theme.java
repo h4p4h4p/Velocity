@@ -8,7 +8,7 @@ public class Theme {
     public static final int BODY_BG = 0xC0141414;
     public static final int SEPARATOR = 0x26FFFFFF;
     public static final int HOVER = 0x2BFFFFFF;
-    public static int ACCENT = 0xFF1B395C;
+    public static int ACCENT = 0xFFFF5555;
     public static final int TEXT = 0xFFFFFFFF;
     public static final int TEXT_DIM = 0xFFBDBDBD;
     public static final int TEXT_GRAY = 0xFF8F8F8F;
