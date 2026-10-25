@@ -26,6 +26,7 @@ public class ModuleManager {
         modules.add(new NoHurtCam());
         modules.add(new NoFOV());
         modules.add(new Interface());
+        modules.add(new ClientSpoofer());
         modules.add(new NameHider());
         modules.add(new Jetpack());
         modules.add(new Flight());
