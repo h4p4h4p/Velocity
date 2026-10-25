@@ -25,8 +25,8 @@ public class Velocity extends Module {
     private static final String HANDLER_NAME = "ragejava_velocity";
 
     private final ModeSetting modeSetting = new ModeSetting("Mode", new String[]{MODE_MODIFY, MODE_LAG, MODE_SIMULATIONS}, 0);
-    private final SliderSetting horizontalSetting = new SliderSetting("Horizontal", 0, 0, 100, 5);
-    private final SliderSetting verticalSetting = new SliderSetting("Vertical", 0, 0, 100, 5);
+    private final SliderSetting horizontalSetting = new SliderSetting("Horizontal", 0, -1.0, 1.0, 0.1);
+    private final SliderSetting verticalSetting = new SliderSetting("Vertical", 0, -1.0, 1.0, 0.1);
     private final SliderSetting lagChanceSetting = new SliderSetting("Lag Chance", 0, 0, 100, 5);
 
     private final Minecraft mc = Minecraft.getMinecraft();
@@ -146,8 +146,8 @@ public class Velocity extends Module {
                             return;
                         }
                         if (modify()) {
-                            double h = horizontalSetting.getValue() / 100.0;
-                            double v = verticalSetting.getValue() / 100.0;
+                            double h = horizontalSetting.getValue();
+                            double v = verticalSetting.getValue();
                             msg = new S12PacketEntityVelocity(id,
                                     p.getMotionX() / 8000.0 * h,
                                     p.getMotionY() / 8000.0 * v,
@@ -163,8 +163,8 @@ public class Velocity extends Module {
                         return;
                     }
                     if (modify()) {
-                        double h = horizontalSetting.getValue() / 100.0;
-                        double v = verticalSetting.getValue() / 100.0;
+                        double h = horizontalSetting.getValue();
+                        double v = verticalSetting.getValue();
                         msg = new S27PacketExplosion(p.getX(), p.getY(), p.getZ(), p.getStrength(),
                                 p.getAffectedBlockPositions(),
                                 new Vec3(p.func_149149_c() * h, p.func_149144_d() * v, p.func_149147_e() * h));

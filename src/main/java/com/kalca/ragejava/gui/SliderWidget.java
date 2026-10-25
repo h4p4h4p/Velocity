@@ -163,14 +163,17 @@ public class SliderWidget extends Widget implements TextInput {
             if (buffer.length() > 0) buffer.setLength(buffer.length() - 1);
             return true;
         }
-        if (isNumeric(typedChar) && buffer.length() < MAX_CHARS) {
+        if (accepts(typedChar) && buffer.length() < MAX_CHARS) {
             buffer.append(typedChar);
         }
         return true;
     }
 
-    private static boolean isNumeric(char c) {
-        return c >= '0' && c <= '9';
+    /** Allows negatives and decimals, which the -1..1 multiplier sliders need. */
+    private boolean accepts(char c) {
+        if (c >= '0' && c <= '9') return true;
+        if (c == '-') return buffer.length() == 0;
+        return c == '.' && buffer.indexOf(".") < 0;
     }
 
     @Override

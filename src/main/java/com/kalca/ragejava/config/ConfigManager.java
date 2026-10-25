@@ -43,6 +43,20 @@ public class ConfigManager {
         }
     }
 
+    /** Converts the old 0..100 Velocity sliders to the current -1..1 multipliers. */
+    private static void migrateVelocityScale(Map<String, String> values, String key) {
+        String raw = values.get(key);
+        if (raw == null) return;
+        try {
+            double old = Double.parseDouble(raw);
+            if (Math.abs(old) <= 1.0D) return;
+            double scaled = old / 100.0D;
+            double snapped = Math.round(scaled * 10.0D) / 10.0D;
+            values.put(key, Double.toString(Math.max(-1.0D, Math.min(1.0D, snapped))));
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
     public void load(ModuleManager modules) {
         if (!file.exists()) return;
         Map<String, String> values = new HashMap<>();
@@ -75,6 +89,10 @@ public class ConfigManager {
                 values.put("AutoSprint.key", values.get("Sprint.key"));
             }
         }
+
+        // Velocity's knockback multipliers used to be stored as 0..100 percentages.
+        migrateVelocityScale(values, "Velocity.Horizontal");
+        migrateVelocityScale(values, "Velocity.Vertical");
 
         for (Module module : modules.getModules()) {
             String enabled = values.get(module.getName() + ".enabled");
