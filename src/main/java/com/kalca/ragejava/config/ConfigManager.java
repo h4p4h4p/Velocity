@@ -68,6 +68,14 @@ public class ConfigManager {
             CommandManager.rainbow = rainbow.equalsIgnoreCase("true");
         }
 
+        // Sprint was renamed to AutoSprint; carry over its enabled state and key bind.
+        if (!values.containsKey("AutoSprint.enabled") && values.containsKey("Sprint.enabled")) {
+            values.put("AutoSprint.enabled", values.get("Sprint.enabled"));
+            if (values.containsKey("Sprint.key")) {
+                values.put("AutoSprint.key", values.get("Sprint.key"));
+            }
+        }
+
         for (Module module : modules.getModules()) {
             String enabled = values.get(module.getName() + ".enabled");
             if (enabled != null) module.setEnabled(enabled.equalsIgnoreCase("true"));
