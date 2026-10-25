@@ -1,20 +1,23 @@
 package com.kalca.ragejava.module;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.network.play.client.C03PacketPlayer;
 
 /**
- * Takes exactly half a heart off the local player when the module is enabled.
+ * Takes half a heart off the player through the server's own fall-damage check.
  *
- * EntityPlayerSP rejects attackEntityFrom on the client, so the hit is applied the same way an
- * incoming damage status packet is: run the hurt animation and sound, then remove one health
- * point. Health is server-authoritative, so the server's next health update restores it; this is
- * a local hit, useful for testing damage-triggered behaviour.
+ * The server builds fall distance from the vertical delta of movement packets, not from the
+ * client's rendered position. A burst of tiny up/down steps followed by an on-ground packet
+ * therefore registers as a short fall while the player stands still. 65 pairs of 0.049 blocks
+ * leave ~3.2 blocks of fall distance, the smallest fall that deals one point of damage.
+ *
+ * Fall distance only accumulates while a block is within the server's ground probe, so this
+ * needs solid ground under the player. Creative and allowFlying players are never hurt by falls.
  */
 public class SelfDamage extends Module {
 
-    /** Minecraft counts health in half-hearts, so one point is half a heart. */
-    private static final float HALF_HEART = 1.0F;
+    private static final int STEPS = 65;
+    private static final double STEP = 0.049D;
 
     private final Minecraft mc = Minecraft.getMinecraft();
 
@@ -24,12 +27,22 @@ public class SelfDamage extends Module {
 
     @Override
     public void onEnable() {
-        EntityPlayerSP player = mc.thePlayer;
-        if (player == null || mc.theWorld == null) return;
-        if (player.getHealth() <= 0.0F) return;
+        if (mc.thePlayer == null || mc.theWorld == null || mc.getNetHandler() == null) return;
+        if (mc.thePlayer.capabilities.allowFlying) return;
 
-        player.handleStatusUpdate((byte) 2);
-        player.setHealth(Math.max(0.0F, player.getHealth() - HALF_HEART));
+        double x = mc.thePlayer.posX;
+        double y = mc.thePlayer.posY;
+        double z = mc.thePlayer.posZ;
+
+        for (int i = 0; i < STEPS; i++) {
+            send(new C03PacketPlayer.C04PacketPlayerPosition(x, y + STEP, z, false));
+            send(new C03PacketPlayer.C04PacketPlayerPosition(x, y, z, false));
+        }
+        send(new C03PacketPlayer.C04PacketPlayerPosition(x, y, z, true));
+    }
+
+    private void send(C03PacketPlayer packet) {
+        mc.getNetHandler().addToSendQueue(packet);
     }
 
     @Override
