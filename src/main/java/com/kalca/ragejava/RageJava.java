@@ -20,6 +20,11 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import org.lwjgl.input.Keyboard;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @Mod(modid = RageJava.MODID, name = RageJava.NAME, version = RageJava.VERSION)
 public class RageJava {
 
@@ -121,16 +126,28 @@ public class RageJava {
         ScaledResolution sr = new ScaledResolution(mc);
         int width = sr.getScaledWidth();
 
-        int y = 2;
-        for (Module module : moduleManager.getEnabledModules()) {
+        List<Module> visible = new ArrayList<>(moduleManager.getEnabledModules());
+        Map<Module, String> suffixes = new HashMap<>();
+        for (Module module : visible) {
             String tag = module.getTag();
-            boolean hasTag = tag != null && !tag.isEmpty();
-            String suffix = hasTag ? " " + tag : "";
+            suffixes.put(module, tag == null || tag.isEmpty() ? "" : " " + tag);
+        }
+        // Longest rows first so the right-aligned list has a clean left edge.
+        visible.sort((a, b) -> {
+            int widthA = RenderUtil.getTextWidth(a.getName() + suffixes.get(a));
+            int widthB = RenderUtil.getTextWidth(b.getName() + suffixes.get(b));
+            if (widthA != widthB) return Integer.compare(widthB, widthA);
+            return a.getName().compareToIgnoreCase(b.getName());
+        });
+
+        int y = 2;
+        for (Module module : visible) {
+            String suffix = suffixes.get(module);
             int nameWidth = RenderUtil.getTextWidth(module.getName());
             float x = width - 2 - nameWidth - RenderUtil.getTextWidth(suffix);
-            RenderUtil.drawString(module.getName(), x, y, 0xFFFFFFFF);
-            if (hasTag) {
-                RenderUtil.drawString(suffix, x + nameWidth, y, Theme.ACCENT);
+            RenderUtil.drawString(module.getName(), x, y, Theme.ACCENT);
+            if (!suffix.isEmpty()) {
+                RenderUtil.drawString(suffix, x + nameWidth, y, Theme.TEXT_GRAY);
             }
             y += RenderUtil.getTextHeight() + 1;
         }
