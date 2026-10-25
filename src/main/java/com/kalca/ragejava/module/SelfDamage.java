@@ -9,7 +9,7 @@ import net.minecraft.client.entity.EntityPlayerSP;
  * EntityPlayerSP rejects attackEntityFrom on the client, so the hit is applied the same way an
  * incoming damage status packet is: run the hurt animation and sound, then remove one health
  * point. Health is server-authoritative, so the server's next health update restores it; this is
- * a local hit, useful for testing damage-triggered modules such as HurtBoost.
+ * a local hit, useful for testing damage-triggered behaviour.
  */
 public class SelfDamage extends Module {
 
