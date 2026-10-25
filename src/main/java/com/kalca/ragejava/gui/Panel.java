@@ -112,6 +112,7 @@ public class Panel {
     /** Full width this panel needs, including the preview column of an expanded module. */
     public float getNaturalWidth() {
         float w = getBaseWidth();
+        if (collapsed) return w;
         for (ModuleButton button : visibleButtons()) {
             if (button.isExpanded() && button.hasSidePreview()) {
                 w += ModuleButton.PREVIEW_WIDTH + 16;
@@ -132,6 +133,7 @@ public class Panel {
     }
 
     private boolean hasExpandedPreview() {
+        if (collapsed) return false;
         for (ModuleButton button : buttons) {
             if (button.hasSidePreview() && button.isExpanded()) return true;
         }
