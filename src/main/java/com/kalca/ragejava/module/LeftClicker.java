@@ -19,10 +19,20 @@ public class LeftClicker extends Module {
 
     public static final String MODE_NORMAL = "Normal";
     public static final String MODE_TRIGGER = "Trigger";
-    public static final String MODE_WEAPON_ONLY = "Weapon Only";
 
+    // Old configs selected NCP as mode index 2. Without this it would clamp to Trigger.
     private final ModeSetting modeSetting = new ModeSetting("Mode",
-            new String[]{MODE_NORMAL, MODE_TRIGGER, MODE_WEAPON_ONLY}, 0);
+            new String[]{MODE_NORMAL, MODE_TRIGGER}, 0) {
+        @Override
+        public void fromConfigString(String s) {
+            if ("2".equals(s.trim())) {
+                setIndex(0);
+                return;
+            }
+            super.fromConfigString(s);
+        }
+    };
+    private final BooleanSetting weaponOnlySetting = new BooleanSetting("Weapon Only", false);
     private final SliderSetting delaySetting = new SliderSetting("Delay", 100, 0, 1000, 10);
     private final SliderSetting cpsSetting = new SliderSetting("CPS", 12, 1, 20, 1);
     private final SliderSetting jitterSetting = new SliderSetting("Jitter", 0, 0, 100, 5);
@@ -37,6 +47,7 @@ public class LeftClicker extends Module {
     public LeftClicker() {
         super("LeftClicker", Category.COMBAT);
         settings.add(modeSetting);
+        settings.add(weaponOnlySetting);
         settings.add(delaySetting);
         settings.add(cpsSetting);
         settings.add(jitterSetting);
@@ -53,7 +64,7 @@ public class LeftClicker extends Module {
             return;
         }
 
-        if (weaponOnly() && !holdingWeapon()) {
+        if (weaponOnlySetting.getValue() && !holdingWeapon()) {
             reset();
             return;
         }
@@ -149,10 +160,6 @@ public class LeftClicker extends Module {
 
     private boolean triggerMode() {
         return MODE_TRIGGER.equals(modeSetting.getValue());
-    }
-
-    private boolean weaponOnly() {
-        return MODE_WEAPON_ONLY.equals(modeSetting.getValue());
     }
 
     private boolean holdingWeapon() {

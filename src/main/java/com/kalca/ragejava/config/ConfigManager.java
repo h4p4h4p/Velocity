@@ -19,7 +19,7 @@ import java.util.Map;
 public class ConfigManager {
 
     private static final String CONFIG_VERSION_KEY = "ragejava.configVersion";
-    private static final String CONFIG_VERSION = "3";
+    private static final String CONFIG_VERSION = "2";
 
     private final File file;
 
@@ -122,11 +122,6 @@ public class ConfigManager {
                 if (name.equals("Mode") || name.equals("Speed")) continue;
                 values.put("Breaker." + name, entry.getValue());
             }
-        }
-
-        // LeftClicker's removed NCP mode was index 2; that slot is now Weapon Only.
-        if (configVersion < 3 && "2".equals(values.get("LeftClicker.Mode"))) {
-            values.put("LeftClicker.Mode", "0");
         }
 
         // Velocity's knockback multipliers used to be stored as 0..100 percentages.
