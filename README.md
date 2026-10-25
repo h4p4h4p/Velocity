@@ -1,5 +1,5 @@
-open the GUI with K
+Velocity Client is developed by AL3XMABAH0
 
-Use with Forge 1.8.9 (using Prism Launcher is recommended)
+  To open the ClickGUI use K
 
-extracurricular
+  % is the prefix for chat commands, for more info use %help
