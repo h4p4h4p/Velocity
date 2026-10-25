@@ -64,6 +64,10 @@ public class Flight extends Module {
             new String[]{MODE_NORMAL, MODE_VERUS, MODE_VERUS_DAMAGE, MODE_VERUS_GLIDE,
                     MODE_KEEP_Y}, 0);
 
+    // KeepY mode: claim the floor under the player so the server stops correcting the hover.
+    private final BooleanSetting keepYGroundSpoofSetting =
+            new BooleanSetting("Ground Spoof", true);
+
     // Verus mode (FDP: Damage, TimerSlow, BoostTicks, BoostMotion, YBoost).
     private final BooleanSetting verusSelfDamageSetting = new BooleanSetting("Damage", false);
     private final BooleanSetting verusTimerSlowSetting = new BooleanSetting("Timer Slow", true);
@@ -93,6 +97,8 @@ public class Flight extends Module {
     /** Feet height captured when KeepY was activated; null until the first in-world tick. */
     private Double keepY;
     private boolean keepYJumpHeld;
+    /** True while the player rests on the KeepY floor, which is when the spoof is honest. */
+    private boolean keepYHovering;
     private int ticks;
     private int ticks2;
     private int boostTicks;
@@ -103,6 +109,7 @@ public class Flight extends Module {
     public Flight() {
         super("Flight", Category.MOVEMENT);
         settings.add(flyModeSetting);
+        settings.add(keepYGroundSpoofSetting);
         settings.add(verusSelfDamageSetting);
         settings.add(verusTimerSlowSetting);
         settings.add(verusBoostTicksSetting);
@@ -127,6 +134,9 @@ public class Flight extends Module {
         }
         if (setting == reDamageSetting) {
             return MODE_VERUS_DAMAGE.equals(mode) && BOOST3.equals(boostMode());
+        }
+        if (setting == keepYGroundSpoofSetting) {
+            return MODE_KEEP_Y.equals(mode);
         }
         return super.isSettingVisible(setting);
     }
@@ -163,6 +173,9 @@ public class Flight extends Module {
 
         if (MODE_KEEP_Y.equals(currentMode)) {
             handleKeepY(player);
+            // Only needed when the spoof is on, but arming every tick lets the option be
+            // toggled from the GUI while the mode is running.
+            armChannel();
             return;
         }
 
@@ -187,6 +200,7 @@ public class Flight extends Module {
         ticks = 0;
         ticks2 = 1;
         boostTicks = 0;
+        keepYHovering = false;
         lastMode = newMode;
 
         EntityPlayerSP player = mc.thePlayer;
@@ -242,6 +256,9 @@ public class Flight extends Module {
             player.motionY = (floor - player.posY) / 0.98D + 0.08D;
         }
 
+        // Only claim the ground while actually resting on the floor. A hop has to leave the
+        // ground normally, otherwise the server sees upward motion from a grounded player.
+        keepYHovering = player.posY <= floor + 0.001D && player.motionY <= 0.1D;
         player.fallDistance = 0.0F;
     }
 
@@ -549,6 +566,9 @@ public class Flight extends Module {
         if (!isEnabled()) return false;
         String mode = mode();
         if (MODE_VERUS.equals(mode)) return true;
+        if (MODE_KEEP_Y.equals(mode)) {
+            return keepYGroundSpoofSetting.getValue() && keepYHovering;
+        }
         if (!MODE_VERUS_DAMAGE.equals(mode)) return false;
         return ticks < 3 && (BOOST1.equals(boostMode()) || BOOST2.equals(boostMode()));
     }
@@ -585,6 +605,7 @@ public class Flight extends Module {
         boostTicks = 0;
         keepY = null;
         keepYJumpHeld = false;
+        keepYHovering = false;
         if (mc.thePlayer != null) {
             mc.thePlayer.motionX = 0.0D;
             mc.thePlayer.motionY = 0.0D;
