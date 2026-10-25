@@ -18,7 +18,6 @@ public class ModuleManager {
         modules.add(new Backtrack());
         modules.add(new RightClicker());
         modules.add(new Velocity());
-        modules.add(new SelfDamage());
         modules.add(new Breaker());
         modules.add(new Esp());
         modules.add(new StorageESP());
