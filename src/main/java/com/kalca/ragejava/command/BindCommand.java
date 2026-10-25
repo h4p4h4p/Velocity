@@ -12,12 +12,12 @@ public class BindCommand extends ChatCommand {
 
     @Override
     public String getUsage() {
-        return "%bind <module> <key> | %bind <module> none";
+        return "%bind <module> <key> [toggle|hold] | %bind <module> none";
     }
 
     @Override
     public void execute(String[] args) {
-        if (args.length != 2) {
+        if (args.length < 2 || args.length > 3) {
             CommandManager.sendMessage("\u00a7cUsage: " + getUsage());
             return;
         }
@@ -28,9 +28,20 @@ public class BindCommand extends ChatCommand {
             return;
         }
 
+        boolean hold = false;
+        if (args.length == 3) {
+            String mode = args[2].toLowerCase();
+            if (!mode.equals("toggle") && !mode.equals("hold")) {
+                CommandManager.sendMessage("\u00a7cUsage: " + getUsage());
+                return;
+            }
+            hold = mode.equals("hold");
+        }
+
         String keyName = args[1].toLowerCase();
         if (keyName.equals("none") || keyName.equals("unbind") || keyName.equals("delete")) {
             module.setKey(-1);
+            module.setHoldBind(false);
             CommandManager.sendMessage("\u00a7a" + module.getName() + "\u00a77 unbound");
             RageJava.scheduleSave();
             return;
@@ -49,7 +60,9 @@ public class BindCommand extends ChatCommand {
             return;
         }
         module.setKey(code);
-        CommandManager.sendMessage("\u00a7a" + module.getName() + "\u00a77 bound to \u00a7a[" + Keyboard.getKeyName(code) + "]");
+        module.setHoldBind(hold);
+        CommandManager.sendMessage("\u00a7a" + module.getName() + "\u00a77 bound to \u00a7a["
+                + Keyboard.getKeyName(code) + "]\u00a77 (" + (hold ? "hold" : "toggle") + ")");
         RageJava.scheduleSave();
     }
 }

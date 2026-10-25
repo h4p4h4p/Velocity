@@ -42,7 +42,6 @@ public class RageJava {
     public final KeyBinding clickGuiKey = new KeyBinding("ClickGUI", Keyboard.KEY_K, "Velocity");
 
     private final Minecraft mc = Minecraft.getMinecraft();
-    private final boolean[] moduleKeyStates = new boolean[256];
 
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
@@ -92,12 +91,24 @@ public class RageJava {
         boolean guiOpen = mc.currentScreen != null;
         for (Module module : moduleManager.getModules()) {
             int key = module.getKey();
-            if (key == -1 || key < 0 || key >= moduleKeyStates.length) continue;
-            boolean down = Keyboard.isKeyDown(key);
-            if (!guiOpen && down && !moduleKeyStates[key]) {
+            boolean down = key > 0 && key < 256 && Keyboard.isKeyDown(key);
+            boolean wasDown = module.isBindDown();
+            module.setBindDown(down);
+
+            if (module.isHoldBind()) {
+                // A hold bind cannot stay on while input belongs to a screen.
+                if (guiOpen) {
+                    if (module.isEnabled()) module.setEnabled(false);
+                    continue;
+                }
+                if (down && !wasDown) module.setEnabled(true);
+                else if (!down && wasDown) module.setEnabled(false);
+                continue;
+            }
+
+            if (!guiOpen && down && !wasDown) {
                 module.toggle();
             }
-            moduleKeyStates[key] = down;
         }
     }
 

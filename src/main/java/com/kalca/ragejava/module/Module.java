@@ -13,6 +13,8 @@ public abstract class Module {
     protected final List<Setting> settings = new ArrayList<>();
     private boolean enabled;
     private int key = -1;
+    private boolean holdBind;
+    private boolean bindDown;
 
     public Module(String name, Category category) {
         this.name = name;
@@ -37,6 +39,24 @@ public abstract class Module {
 
     public void setKey(int key) {
         this.key = key;
+    }
+
+    /** True when the bind should only stay enabled while the key is held. */
+    public boolean isHoldBind() {
+        return holdBind;
+    }
+
+    public void setHoldBind(boolean holdBind) {
+        this.holdBind = holdBind;
+    }
+
+    /** Runtime state of the bound key for hold binds; never persisted. */
+    public boolean isBindDown() {
+        return bindDown;
+    }
+
+    public void setBindDown(boolean bindDown) {
+        this.bindDown = bindDown;
     }
 
     public boolean canBind() {

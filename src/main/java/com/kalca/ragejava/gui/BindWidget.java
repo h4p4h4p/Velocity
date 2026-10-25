@@ -58,7 +58,8 @@ public class BindWidget extends Widget {
         int key = module.getKey();
         if (key <= 0) return "None";
         String name = Keyboard.getKeyName(key);
-        return name == null || name.isEmpty() ? "Key " + key : name;
+        if (name == null || name.isEmpty()) name = "Key " + key;
+        return module.isHoldBind() ? name + " (Hold)" : name;
     }
 
     @Override

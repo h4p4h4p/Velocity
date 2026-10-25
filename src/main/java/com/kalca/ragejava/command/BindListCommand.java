@@ -25,7 +25,9 @@ public class BindListCommand extends ChatCommand {
         for (Module module : modules) {
             if (module.getKey() == -1) continue;
             any = true;
-            CommandManager.sendMessage("\u00a7e" + module.getName() + "\u00a77 - \u00a7a[" + Keyboard.getKeyName(module.getKey()) + "]");
+            CommandManager.sendMessage("\u00a7e" + module.getName() + "\u00a77 - \u00a7a["
+                    + Keyboard.getKeyName(module.getKey()) + "]\u00a77 ("
+                    + (module.isHoldBind() ? "hold" : "toggle") + ")");
         }
         if (!any) CommandManager.sendMessage("\u00a77No modules are bound to a key.");
     }
