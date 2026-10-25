@@ -11,6 +11,7 @@ import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.NetworkManager;
@@ -122,6 +123,9 @@ public class Flight extends Module {
         ticks++;
 
         if (boost1) {
+            // Mirrors FDP's JumpEvent cancel: a real jump would replace the vertical motion.
+            KeyBinding.setKeyBindState(mc.gameSettings.keyBindJump.getKeyCode(), false);
+
             if (ticks == 3) {
                 double x = player.posX;
                 double y = player.posY;
@@ -281,12 +285,17 @@ public class Flight extends Module {
         if (channel == null || !channel.isActive()) return;
 
         if (handler == null) {
-            handler = new VerusHandler();
+            final VerusHandler created = new VerusHandler();
+            handler = created;
             boundChannel = channel;
             if (channel.pipeline().get(HANDLER_NAME) == null) {
                 channel.eventLoop().execute(() -> {
                     try {
-                        channel.pipeline().addBefore("packet_handler", HANDLER_NAME, handler);
+                        // The module may have been disabled before this task ran.
+                        if (handler == created
+                                && channel.pipeline().get(HANDLER_NAME) == null) {
+                            channel.pipeline().addBefore("packet_handler", HANDLER_NAME, created);
+                        }
                     } catch (Exception ignored) {
                     }
                 });
@@ -310,7 +319,6 @@ public class Flight extends Module {
     }
 
     private void removeChannel() {
-        VerusHandler current = handler;
         handler = null;
         Channel channel = boundChannel;
         boundChannel = null;
