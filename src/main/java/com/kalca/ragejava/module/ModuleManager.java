@@ -20,6 +20,7 @@ public class ModuleManager {
         modules.add(new Velocity());
         modules.add(new Breaker());
         modules.add(new Esp());
+        modules.add(new StorageESP());
         modules.add(new Fullbright());
         modules.add(new NoHurtCam());
         modules.add(new Interface());
