@@ -187,8 +187,4 @@ public class AimAssist extends Module {
         return d;
     }
 
-    @Override
-    public String getTag() {
-        return targetSetting.getValue();
-    }
 }
