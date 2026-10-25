@@ -27,6 +27,7 @@ public class ModuleManager {
         modules.add(new Interface());
         modules.add(new NameHider());
         modules.add(new Jetpack());
+        modules.add(new Flight());
     }
 
     public List<Module> getModules() {
