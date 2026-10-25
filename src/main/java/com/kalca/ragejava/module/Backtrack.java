@@ -16,6 +16,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import com.kalca.ragejava.util.RenderUtil;
+import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -25,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 
 public class Backtrack extends Module {
+    private static final double NEAR_CAMERA_MARGIN = 1.2D;
+
     private final SliderSetting ticksSetting = new SliderSetting("Ticks", 3, 1, 10, 1);
     private final SliderSetting rangeSetting = new SliderSetting("Range", 6, 1, 20, 0.5);
     private final BooleanSetting espSetting = new BooleanSetting("ESP", true);
@@ -117,21 +120,29 @@ public class Backtrack extends Module {
         int r = (color >> 16) & 0xFF;
         int g = (color >> 8) & 0xFF;
         int b = color & 0xFF;
-        int a = 180;
         double boxSize = espBoxSizeSetting.getValue();
 
         GlStateManager.disableTexture2D();
+        GlStateManager.enableBlend();
+        GlStateManager.disableCull();
+        GlStateManager.tryBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, 1, 0);
         Tessellator tessellator = Tessellator.getInstance();
 
         for (Deque<PositionData> deque : history.values()) {
             for (PositionData data : deque) {
                 AxisAlignedBB btBox = AxisAlignedBB.fromBounds(
-                        data.x - camX - boxSize, data.y - camY - boxSize, data.z - camZ - boxSize,
-                        data.x - camX + boxSize, data.y - camY + boxSize, data.z - camZ + boxSize);
-                RenderUtil.drawOutlinedBox(tessellator, btBox, r, g, b, a);
+                        data.x - boxSize, data.y - boxSize, data.z - boxSize,
+                        data.x + boxSize, data.y + boxSize, data.z + boxSize);
+                if (RenderUtil.pointNearBox(camX, camY, camZ, btBox, NEAR_CAMERA_MARGIN)) continue;
+                RenderUtil.drawFilledBox(tessellator,
+                        btBox.minX - camX, btBox.minY - camY, btBox.minZ - camZ,
+                        btBox.maxX - camX, btBox.maxY - camY, btBox.maxZ - camZ,
+                        r, g, b, 100);
             }
         }
 
+        GlStateManager.enableCull();
+        GlStateManager.disableBlend();
         GlStateManager.enableTexture2D();
     }
 

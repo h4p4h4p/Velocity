@@ -23,6 +23,7 @@ import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
+import org.lwjgl.opengl.GL11;
 import java.lang.reflect.Field;
 
 import java.util.HashMap;
@@ -37,6 +38,8 @@ public class Hitboxes extends Module {
     private final ModeSetting modeSetting = new ModeSetting("Mode", new String[]{MODE_STANDARD, MODE_DISADVANTAGE}, 0);
     private final SliderSetting multiplierSetting = new SliderSetting("Multiplier", 1.5, 1.0, 5.0, 0.05);
     private final BooleanSetting espSetting = new BooleanSetting("Show Hitboxes", false);
+
+    private static final double NEAR_CAMERA_MARGIN = 1.2D;
 
     private final Minecraft mc = Minecraft.getMinecraft();
     private final Map<UUID, double[]> originalDims = new HashMap<>();
@@ -223,10 +226,12 @@ public class Hitboxes extends Module {
         double camX = mc.getRenderManager().viewerPosX;
         double camY = mc.getRenderManager().viewerPosY;
         double camZ = mc.getRenderManager().viewerPosZ;
-
-        int r = 255, g = 255, b = 255, a = 180;
+        float partialTicks = event.partialTicks;
 
         GlStateManager.disableTexture2D();
+        GlStateManager.enableBlend();
+        GlStateManager.disableCull();
+        GlStateManager.tryBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, 1, 0);
         Tessellator tessellator = Tessellator.getInstance();
 
         if (standard()) {
@@ -240,26 +245,27 @@ public class Hitboxes extends Module {
                 if (dims == null) continue;
 
                 double mult = multiplierSetting.getValue();
-                double origWidth = dims[0];
-                double origHeight = dims[1];
+                double halfX = (dims[0] * 0.5) * mult;
+                double halfY = (dims[1] * 0.5) * mult;
+                double halfZ = (dims[0] * 0.5) * mult;
 
-                double halfX = (origWidth * 0.5) * mult;
-                double halfY = (origHeight * 0.5) * mult;
-                double halfZ = (origWidth * 0.5) * mult;
+                double ox = entity.lastTickPosX + (entity.posX - entity.lastTickPosX) * partialTicks - entity.posX;
+                double oy = entity.lastTickPosY + (entity.posY - entity.lastTickPosY) * partialTicks - entity.posY;
+                double oz = entity.lastTickPosZ + (entity.posZ - entity.lastTickPosZ) * partialTicks - entity.posZ;
 
-                double cx = entity.posX;
-                double cy = entity.posY;
-                double cz = entity.posZ;
+                double cx = entity.posX + ox;
+                double cy = entity.posY + oy;
+                double cz = entity.posZ + oz;
 
                 AxisAlignedBB expanded = new AxisAlignedBB(
                         cx - halfX, cy - halfY, cz - halfZ,
                         cx + halfX, cy + halfY, cz + halfZ);
+                if (RenderUtil.pointNearBox(camX, camY, camZ, expanded, NEAR_CAMERA_MARGIN)) continue;
 
-                AxisAlignedBB box = AxisAlignedBB.fromBounds(
+                RenderUtil.drawFilledBox(tessellator,
                         expanded.minX - camX, expanded.minY - camY, expanded.minZ - camZ,
-                        expanded.maxX - camX, expanded.maxY - camY, expanded.maxZ - camZ);
-
-                RenderUtil.drawOutlinedBox(tessellator, box, 255, 255, 255, a);
+                        expanded.maxX - camX, expanded.maxY - camY, expanded.maxZ - camZ,
+                        255, 255, 255, 100);
             }
         } else if (disadvantage()) {
             EntityPlayer player = mc.thePlayer;
@@ -267,29 +273,31 @@ public class Hitboxes extends Module {
             double[] dims = originalDims.get(uuid);
             if (dims != null) {
                 double mult = multiplierSetting.getValue();
-                double origWidth = dims[0];
-                double origHeight = dims[1];
+                double halfX = (dims[0] * 0.5) * mult;
+                double halfY = (dims[1] * 0.5) * mult;
+                double halfZ = (dims[0] * 0.5) * mult;
 
-                double halfX = (origWidth * 0.5) * mult;
-                double halfY = (origHeight * 0.5) * mult;
-                double halfZ = (origWidth * 0.5) * mult;
+                double ox = player.lastTickPosX + (player.posX - player.lastTickPosX) * partialTicks - player.posX;
+                double oy = player.lastTickPosY + (player.posY - player.lastTickPosY) * partialTicks - player.posY;
+                double oz = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * partialTicks - player.posZ;
 
-                double cx = player.posX;
-                double cy = player.posY;
-                double cz = player.posZ;
+                double cx = player.posX + ox;
+                double cy = player.posY + oy;
+                double cz = player.posZ + oz;
 
                 AxisAlignedBB expanded = new AxisAlignedBB(
                         cx - halfX, cy - halfY, cz - halfZ,
                         cx + halfX, cy + halfY, cz + halfZ);
 
-                AxisAlignedBB box = AxisAlignedBB.fromBounds(
+                RenderUtil.drawFilledBox(tessellator,
                         expanded.minX - camX, expanded.minY - camY, expanded.minZ - camZ,
-                        expanded.maxX - camX, expanded.maxY - camY, expanded.maxZ - camZ);
-
-                RenderUtil.drawOutlinedBox(tessellator, box, 255, 255, 255, a);
+                        expanded.maxX - camX, expanded.maxY - camY, expanded.maxZ - camZ,
+                        255, 255, 255, 100);
             }
         }
 
+        GlStateManager.enableCull();
+        GlStateManager.disableBlend();
         GlStateManager.enableTexture2D();
     }
 
