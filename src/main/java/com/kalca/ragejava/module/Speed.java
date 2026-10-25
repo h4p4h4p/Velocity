@@ -33,6 +33,10 @@ public class Speed extends Module {
 
     private final Minecraft mc = Minecraft.getMinecraft();
 
+    // VerusHop-style speed: one acceleration on the ground, then decay in the air.
+    // Re-strafing to full speed every airborne tick is what the speed checks see.
+    private double airSpeed;
+
     public Speed() {
         super("Speed", Category.MOVEMENT);
         settings.add(modeSetting);
@@ -73,12 +77,19 @@ public class Speed extends Module {
             return;
         }
 
-        if (autoJumpSetting.getValue() && player.onGround && PlayerUtil.isMoving(player)) {
-            player.jump();
+        if (!PlayerUtil.isMoving(player) || player.isSneaking()) return;
+
+        if (player.onGround) {
+            airSpeed = 0.28D * speedSetting.getValue();
+            if (autoJumpSetting.getValue()) {
+                player.jump();
+            }
+        } else {
+            airSpeed *= 0.98D;
         }
 
-        if (PlayerUtil.isMoving(player)) {
-            PlayerUtil.strafe(player, 0.28 * speedSetting.getValue());
+        if (airSpeed > 0.0D) {
+            PlayerUtil.strafe(player, airSpeed);
         }
     }
 
@@ -91,9 +102,11 @@ public class Speed extends Module {
 
     @Override
     public void onEnable() {
+        airSpeed = 0.0D;
     }
 
     @Override
     public void onDisable() {
+        airSpeed = 0.0D;
     }
 }
