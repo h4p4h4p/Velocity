@@ -4,12 +4,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 
 /**
- * Takes exactly half a heart off the local player when the module is enabled.
+ * Takes exactly half a heart off the local player and knocks them back when the module is enabled.
  *
  * EntityPlayerSP rejects attackEntityFrom on the client, so the hit is applied the same way an
- * incoming damage status packet is: run the hurt animation and sound, then remove one health
- * point. Health is server-authoritative, so the server's next health update restores it; this is
- * a local hit, useful for testing damage-triggered modules such as HurtBoost.
+ * incoming damage status packet is: run the hurt animation and sound, remove one health point,
+ * then apply the knockback impulse a hit from one block ahead would produce. Health is
+ * server-authoritative, so the server's next health update restores it; the velocity is a normal
+ * client-side impulse, useful for testing damage- and velocity-triggered behaviour.
  */
 public class SelfDamage extends Module {
 
@@ -30,6 +31,13 @@ public class SelfDamage extends Module {
 
         player.handleStatusUpdate((byte) 2);
         player.setHealth(Math.max(0.0F, player.getHealth() - HALF_HEART));
+
+        // Vanilla knocks the victim away from the attacker: model an attacker one block in front,
+        // so the impulse is backwards and up.
+        double yaw = Math.toRadians(player.rotationYaw);
+        double forwardX = -Math.sin(yaw);
+        double forwardZ = Math.cos(yaw);
+        player.knockBack(player, 0.4F, forwardX, forwardZ);
     }
 
     @Override
