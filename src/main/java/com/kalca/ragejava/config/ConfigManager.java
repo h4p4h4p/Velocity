@@ -93,6 +93,10 @@ public class ConfigManager {
         // Velocity's knockback multipliers used to be stored as 0..100 percentages.
         migrateVelocityScale(values, "Velocity.Horizontal");
         migrateVelocityScale(values, "Velocity.Vertical");
+        // Simulations was removed from Velocity; use Modify rather than clamping to Lag.
+        if ("2".equals(values.get("Velocity.Mode"))) {
+            values.put("Velocity.Mode", "0");
+        }
 
         for (Module module : modules.getModules()) {
             String enabled = values.get(module.getName() + ".enabled");

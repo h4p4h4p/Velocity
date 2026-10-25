@@ -20,11 +20,10 @@ public class Velocity extends Module {
 
     public static final String MODE_MODIFY = "Modify";
     public static final String MODE_LAG = "Lag";
-    public static final String MODE_SIMULATIONS = "Simulations";
 
     private static final String HANDLER_NAME = "ragejava_velocity";
 
-    private final ModeSetting modeSetting = new ModeSetting("Mode", new String[]{MODE_MODIFY, MODE_LAG, MODE_SIMULATIONS}, 0);
+    private final ModeSetting modeSetting = new ModeSetting("Mode", new String[]{MODE_MODIFY, MODE_LAG}, 0);
     private final SliderSetting horizontalSetting = new SliderSetting("Horizontal", 0, -1.0, 1.0, 0.1);
     private final SliderSetting verticalSetting = new SliderSetting("Vertical", 0, -1.0, 1.0, 0.1);
     private final SliderSetting lagChanceSetting = new SliderSetting("Lag Chance", 0, 0, 100, 5);
@@ -61,10 +60,6 @@ public class Velocity extends Module {
 
     private boolean lag() {
         return MODE_LAG.equals(mode());
-    }
-
-    private boolean simulations() {
-        return MODE_SIMULATIONS.equals(mode());
     }
 
     @SubscribeEvent
@@ -153,9 +148,6 @@ public class Velocity extends Module {
                                     p.getMotionY() / 8000.0 * v,
                                     p.getMotionZ() / 8000.0 * h);
                         }
-                        if (simulations()) {
-                            return;
-                        }
                     }
                 } else if (msg instanceof S27PacketExplosion) {
                     S27PacketExplosion p = (S27PacketExplosion) msg;
@@ -168,9 +160,6 @@ public class Velocity extends Module {
                         msg = new S27PacketExplosion(p.getX(), p.getY(), p.getZ(), p.getStrength(),
                                 p.getAffectedBlockPositions(),
                                 new Vec3(p.func_149149_c() * h, p.func_149144_d() * v, p.func_149147_e() * h));
-                    }
-                    if (simulations()) {
-                        return;
                     }
                 }
             }
