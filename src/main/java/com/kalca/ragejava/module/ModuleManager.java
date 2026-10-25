@@ -15,6 +15,7 @@ public class ModuleManager {
         modules.add(new Hitboxes());
         modules.add(new LeftClicker());
         modules.add(new AimAssist());
+        modules.add(new HitSelect());
         modules.add(new Backtrack());
         modules.add(new RightClicker());
         modules.add(new Velocity());
