@@ -88,8 +88,11 @@ public class Panel {
         return hasScrollbar() ? getWidth() - SCROLLBAR_W - 2f : getWidth();
     }
 
-    public float getWidth() {
-        if (forcedWidth > 0f) return forcedWidth;
+    /**
+     * Width the settings column needs on its own. The side preview is left out so the
+     * uniform column width shared by the other panels does not balloon while ESP is open.
+     */
+    public float getBaseWidth() {
         float w = DEFAULT_WIDTH;
         for (ModuleButton button : visibleButtons()) {
             float bw = RenderUtil.getTextWidth(button.getModule().getName());
@@ -100,13 +103,39 @@ public class Panel {
             for (Widget widget : button.getWidgets()) {
                 bw = Math.max(bw, widget.getPreferredWidth() + 8);
             }
-            if (button.isExpanded() && button.hasSidePreview()) {
-                bw += ModuleButton.PREVIEW_WIDTH + 16;
-            }
             w = Math.max(w, bw);
         }
         if (hasScrollbar()) w += SCROLLBAR_W + 2f;
         return w;
+    }
+
+    /** Full width this panel needs, including the preview column of an expanded module. */
+    public float getNaturalWidth() {
+        float w = getBaseWidth();
+        for (ModuleButton button : visibleButtons()) {
+            if (button.isExpanded() && button.hasSidePreview()) {
+                w += ModuleButton.PREVIEW_WIDTH + 16;
+                break;
+            }
+        }
+        return w;
+    }
+
+    /**
+     * The uniform column width is a floor, not a cap. ESP's side preview is drawn inside
+     * the panel, so clamping the panel to the uniform width left the setting widgets only
+     * about a third of the row and made their labels and values draw over each other.
+     */
+    public float getWidth() {
+        if (forcedWidth <= 0f) return getNaturalWidth();
+        return hasExpandedPreview() ? Math.max(forcedWidth, getNaturalWidth()) : forcedWidth;
+    }
+
+    private boolean hasExpandedPreview() {
+        for (ModuleButton button : buttons) {
+            if (button.hasSidePreview() && button.isExpanded()) return true;
+        }
+        return false;
     }
 
     public void setForcedWidth(float width) {

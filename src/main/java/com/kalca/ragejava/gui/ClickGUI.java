@@ -48,10 +48,11 @@ public class ClickGUI extends GuiScreen {
     @Override
     public void initGui() {
         layout();
-        // Calculate uniform panel width (max of all panels)
+        // Uniform column width comes from the settings columns only; a panel with a
+        // side preview grows past it instead of squeezing its widgets into it.
         float maxWidth = 0f;
         for (Panel panel : panels) {
-            maxWidth = Math.max(maxWidth, panel.getWidth());
+            maxWidth = Math.max(maxWidth, panel.getBaseWidth());
         }
         for (Panel panel : panels) {
             panel.setForcedWidth(maxWidth);
@@ -87,10 +88,11 @@ public class ClickGUI extends GuiScreen {
     }
 
     private void reflow() {
-        // Recalculate uniform width
+        // Recalculate uniform width from the settings columns, so expanding a panel
+        // with a side preview widens only that panel.
         float maxWidth = 0f;
         for (Panel panel : panels) {
-            maxWidth = Math.max(maxWidth, panel.getWidth());
+            maxWidth = Math.max(maxWidth, panel.getBaseWidth());
         }
         for (Panel panel : panels) {
             panel.setForcedWidth(maxWidth);
