@@ -1,5 +1,6 @@
 package com.kalca.ragejava.module;
 
+import com.kalca.ragejava.settings.BooleanSetting;
 import com.kalca.ragejava.settings.SliderSetting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.KeyBinding;
@@ -18,6 +19,7 @@ import org.lwjgl.input.Keyboard;
 public class LegitScaffold extends Module {
 
     private final SliderSetting distanceSetting = new SliderSetting("Distance", 0.3, 0.1, 0.6, 0.05);
+    private final BooleanSetting whileSneakingSetting = new BooleanSetting("While Sneaking", false);
 
     private final Minecraft mc = Minecraft.getMinecraft();
     private boolean autoSneaking;
@@ -25,6 +27,7 @@ public class LegitScaffold extends Module {
     public LegitScaffold() {
         super("LegitScaffold", Category.MOVEMENT);
         settings.add(distanceSetting);
+        settings.add(whileSneakingSetting);
         MinecraftForge.EVENT_BUS.register(this);
     }
 
@@ -34,6 +37,12 @@ public class LegitScaffold extends Module {
         if (!isEnabled()) return;
 
         if (mc.thePlayer == null || mc.theWorld == null || mc.currentScreen != null) {
+            release();
+            return;
+        }
+
+        // "While Sneaking" only assists a player who is already edge-guarding with shift.
+        if (whileSneakingSetting.getValue() && !sneakKeyDown()) {
             release();
             return;
         }
