@@ -137,7 +137,7 @@ public class Velocity extends Module {
                 if (msg instanceof S12PacketEntityVelocity) {
                     S12PacketEntityVelocity p = (S12PacketEntityVelocity) msg;
                     if (id >= 0 && p.getEntityID() == id) {
-                        if (lag() && (lagChanceSetting.getValue() <= 0 || Math.random() * 100 >= lagChanceSetting.getValue())) {
+                        if (lag() && Math.random() * 100.0D < lagChanceSetting.getValue()) {
                             return;
                         }
                         if (modify()) {
@@ -151,7 +151,7 @@ public class Velocity extends Module {
                     }
                 } else if (msg instanceof S27PacketExplosion) {
                     S27PacketExplosion p = (S27PacketExplosion) msg;
-                    if (lag() && (lagChanceSetting.getValue() <= 0 || Math.random() * 100 >= lagChanceSetting.getValue())) {
+                    if (lag() && Math.random() * 100.0D < lagChanceSetting.getValue()) {
                         return;
                     }
                     if (modify()) {
