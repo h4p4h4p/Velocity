@@ -40,6 +40,10 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * Verus, VerusDamage and VerusGlide never use creative flight. They drive motion directly,
  * and Verus/VerusDamage rewrite outgoing movement packets to claim the player is grounded.
+ *
+ * KeepY records the feet height when the mode is turned on and treats it as a floor, so
+ * walking off a block leaves the player hovering at that height while vanilla gravity and
+ * jumping still work - the player can hop in the air and drops back to the recorded Y.
  */
 public class Flight extends Module {
 
@@ -47,6 +51,7 @@ public class Flight extends Module {
     public static final String MODE_VERUS = "Verus";
     public static final String MODE_VERUS_DAMAGE = "VerusDamage";
     public static final String MODE_VERUS_GLIDE = "VerusGlide";
+    public static final String MODE_KEEP_Y = "KeepY";
 
     public static final String BOOST1 = "Boost1";
     public static final String BOOST2 = "Boost2";
@@ -54,8 +59,10 @@ public class Flight extends Module {
 
     private static final String HANDLER_NAME = "ragejava_verusdamage";
 
+    // KeepY is appended last so saved config indices keep pointing at the same modes.
     private final ModeSetting flyModeSetting = new ModeSetting("Fly Mode",
-            new String[]{MODE_NORMAL, MODE_VERUS, MODE_VERUS_DAMAGE, MODE_VERUS_GLIDE}, 0);
+            new String[]{MODE_NORMAL, MODE_VERUS, MODE_VERUS_DAMAGE, MODE_VERUS_GLIDE,
+                    MODE_KEEP_Y}, 0);
 
     // Verus mode (FDP: Damage, TimerSlow, BoostTicks, BoostMotion, YBoost).
     private final BooleanSetting verusSelfDamageSetting = new BooleanSetting("Damage", false);
@@ -83,6 +90,9 @@ public class Flight extends Module {
 
     private final Minecraft mc = Minecraft.getMinecraft();
     private boolean wasFlying;
+    /** Feet height captured when KeepY was activated; null until the first in-world tick. */
+    private Double keepY;
+    private boolean keepYJumpHeld;
     private int ticks;
     private int ticks2;
     private int boostTicks;
@@ -151,6 +161,11 @@ public class Flight extends Module {
             return;
         }
 
+        if (MODE_KEEP_Y.equals(currentMode)) {
+            handleKeepY(player);
+            return;
+        }
+
         if (!player.capabilities.allowFlying) {
             player.capabilities.isFlying = false;
         }
@@ -181,12 +196,53 @@ public class Flight extends Module {
             player.capabilities.isFlying = true;
             return;
         }
+        if (MODE_KEEP_Y.equals(newMode)) {
+            // The floor is whatever height the player stood at when the mode was switched on.
+            keepY = player.posY;
+            keepYJumpHeld = false;
+            player.capabilities.isFlying = false;
+            return;
+        }
         if (!player.capabilities.allowFlying) {
             player.capabilities.isFlying = false;
         }
         if (MODE_VERUS.equals(newMode)) {
             enableVerus(player);
         }
+    }
+
+    /**
+     * KeepY floor. Gravity and jumping are left alone; the player simply never ends a tick
+     * below the height captured on activation.
+     *
+     * The clamp happens before vanilla applies gravity, so the motion is solved backwards:
+     * the tick ends with motionY = (motionY - 0.08) * 0.98, and picking
+     * (floor - posY) / 0.98 + 0.08 lands exactly on the floor instead of dropping through
+     * and being teleported back, which the server would read as an invalid move. At rest the
+     * same formula yields 0.08, which gravity cancels to zero, so hovering does not jitter.
+     */
+    private void handleKeepY(EntityPlayerSP player) {
+        if (keepY == null) keepY = player.posY;
+        final double floor = keepY;
+
+        player.capabilities.isFlying = false;
+
+        boolean jumpDown = mc.gameSettings.keyBindJump.isKeyDown();
+        if (jumpDown && !keepYJumpHeld) {
+            player.motionY = 0.42D;
+        }
+        keepYJumpHeld = jumpDown;
+
+        if (player.posY < floor - 0.001D) {
+            // Safety net for anything that moved the player without going through the clamp.
+            player.setPosition(player.posX, floor, player.posZ);
+            player.motionY = 0.0D;
+        } else if (player.motionY <= 0.0D
+                && player.posY + (player.motionY - 0.08D) * 0.98D < floor) {
+            player.motionY = (floor - player.posY) / 0.98D + 0.08D;
+        }
+
+        player.fallDistance = 0.0F;
     }
 
     /**
@@ -527,6 +583,8 @@ public class Flight extends Module {
         ticks = 0;
         ticks2 = 1;
         boostTicks = 0;
+        keepY = null;
+        keepYJumpHeld = false;
         if (mc.thePlayer != null) {
             mc.thePlayer.motionX = 0.0D;
             mc.thePlayer.motionY = 0.0D;
