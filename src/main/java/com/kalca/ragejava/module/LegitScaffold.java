@@ -20,6 +20,7 @@ public class LegitScaffold extends Module {
 
     private final SliderSetting distanceSetting = new SliderSetting("Distance", 0.3, 0.01, 0.30, 0.01);
     private final BooleanSetting whileSneakingSetting = new BooleanSetting("While Sneaking", false);
+    private final BooleanSetting whileInAirSetting = new BooleanSetting("While In Air", false);
 
     private final Minecraft mc = Minecraft.getMinecraft();
     private boolean autoSneaking;
@@ -28,6 +29,7 @@ public class LegitScaffold extends Module {
         super("LegitScaffold", Category.MOVEMENT);
         settings.add(distanceSetting);
         settings.add(whileSneakingSetting);
+        settings.add(whileInAirSetting);
         MinecraftForge.EVENT_BUS.register(this);
     }
 
@@ -44,6 +46,13 @@ public class LegitScaffold extends Module {
         // "While Sneaking" only assists a player who is already edge-guarding with shift.
         if (whileSneakingSetting.getValue() && !sneakKeyDown()) {
             release();
+            return;
+        }
+
+        // "While In Air" carries an edge sneak through a jump instead of dropping it on takeoff.
+        if (whileInAirSetting.getValue() && !mc.thePlayer.onGround && !mc.thePlayer.isInWater()
+                && !mc.thePlayer.capabilities.isFlying && autoSneaking) {
+            forceSneak();
             return;
         }
 
